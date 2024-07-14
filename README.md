@@ -17,12 +17,10 @@
     - The Server/API is then connected to Redis and Postgres, both being separate deployments, also using a `ClusterIP` service.
     - The worker deployment is connected to the `ClusterIP` of Redis
     - A `PVC` (Persistent Volume Claim) is set up for the Postgres pod
-![basic-setup](resources/multi-container-setup-01.png)<br>
 
 - Steps:
-    1. Create config files for each element/object we will be using
+    1. Create config files for each element/object we will be using:
+        - `client-deployment.yaml`
     2. Test the setup locally on minikube
     3. Create a Github/Travis flow to build images and deploy
     4. Deploy the app to a cloud provider
-
-- 
