@@ -57,6 +57,9 @@
                         - `postgres-cluster-ip-service`
             - `worker-deployment.yaml`:
                 - add `env` to `templates/containers` section (only redis needs to be added)
+            - For the final variable, we use a secret with an imperative command to create it locally (see below at `Secret` object section)
+                - we need to add this also as an env variable to our `server-deployment.yaml` file (instead of `value`, we use `valueFrom`/`secretKeyRef`)
+                - we also need to add this to our `postgres-deployment.yaml` file!
 
         - Config files can also be combined (eg. add the service and the deployment in a single file, that work together):
             - We just need to copy them one after the other in the file, and separate them with a `---` line
@@ -104,3 +107,11 @@
                     - more options are avalilable depending on the cloud provider you use (eg. AWS Block Store, Azure File, Azure Disk, Google Cloud Persistent Disk)
                 - `kubectl describe storageclass` -> for more details, use this command
                 - `kubectl get pv` `... pvc`-> list PVs or PVCs
+    
+    - `Secret`:
+        - it's also a kubernetes object, that we can create, which is used to securely store information in the cluster (SSH key, password, connection string, etc.)
+        - in this case, we create it with an imperative command, instead of the declarative config file (because if we write a config file for it, the secret would still be legible from the config file -> this means that in the production environment we will also have to create this secret!):
+            - `kubectl create secret generic <secret_name> --from-literal key=value`
+            - `kubectl create secret generic pgpassword --from-literal POSTGRES_PASSWORD=postgres_password`
+        - To see what secrets have been created, use the follwing command:
+            - `kubectl get secrets` (it will not reveal the actual key-value pairs, just then `<secret_name>` under which the kvps are stored)
