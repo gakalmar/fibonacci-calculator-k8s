@@ -36,6 +36,27 @@
                 - Update `postgres-deployment.yaml` file with:
                     - `template/spec` section with `volumes`
                     - `containers` section with `volumeMounts` (`subPath` is only required for postgres specifically!)
+        
+        - Configure environment variables:
+            - `server` needs:
+                - `REDIS_HOST` (constant value, but of URL type - describes how to connect to service - use the name of the service!)
+                - `REDIS_PORT` (constant value)
+                - `PGUSER` (constant value)
+                - `PGHOST` (constant value, but of URL type - describes how to connect to service - use the name of the service!)
+                - `PGDATABASE` (constant value)
+                - `PGPORT` (constant value)
+                - `POSTGRES-PASSWORD` (used with a secret)
+            - `worker` needs:
+                - `REDIS_HOST` (constant value, but of URL type - describes how to connect to service - use the name of the service!)
+                - `REDIS_PORT` (constant value)
+            
+            - `server-deployment.yaml`:
+                - add `env` to `templates/containers` section
+                    - `REDIS_HOST` and `PGHOST` values are the names of the services we are connecting to, so:
+                        - `redis-cluster-ip-service`
+                        - `postgres-cluster-ip-service`
+            - `worker-deployment.yaml`:
+                - add `env` to `templates/containers` section (only redis needs to be added)
 
         - Config files can also be combined (eg. add the service and the deployment in a single file, that work together):
             - We just need to copy them one after the other in the file, and separate them with a `---` line
@@ -82,3 +103,4 @@
                     - `k8s.io/minikube-hostpath` is the default - this means "isolate a piece of my local drive for the usage of Kubernetes"
                     - more options are avalilable depending on the cloud provider you use (eg. AWS Block Store, Azure File, Azure Disk, Google Cloud Persistent Disk)
                 - `kubectl describe storageclass` -> for more details, use this command
+                - `kubectl get pv` `... pvc`-> list PVs or PVCs
