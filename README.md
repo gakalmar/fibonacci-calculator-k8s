@@ -63,10 +63,21 @@
 
         - Config files can also be combined (eg. add the service and the deployment in a single file, that work together):
             - We just need to copy them one after the other in the file, and separate them with a `---` line
-    
+        
+        - Setting up `ngress` (https://kubernetes.github.io/ingress-nginx/deploy/):
+            - Setup `ingress` locally: 
+                - make sure you have `minikube` running!
+                - `kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.10.1/deploy/static/provider/cloud/deploy.yaml`
+                - `minikube addons enable ingress`
+            - Create config file with these routing rules:
+                - `/` path is forwarded to `client`
+                - `/api` path is forwarded to the `server`
+
     2. Test the setup locally on minikube:
         - to apply a group of config files:
             - `kubectl apply -f k8s` (we refer to the folder, and everything inside it will be applied)
+        - then connect with:
+            - `minikube tunnel` -> connect to `127.0.0.1` (localhost) in your browser
 
     3. Create a Github/Travis flow to build images and deploy
     4. Deploy the app to a cloud provider
@@ -115,3 +126,28 @@
             - `kubectl create secret generic pgpassword --from-literal POSTGRES_PASSWORD=postgres_password`
         - To see what secrets have been created, use the follwing command:
             - `kubectl get secrets` (it will not reveal the actual key-value pairs, just then `<secret_name>` under which the kvps are stored)
+    
+    - `LoadBalancer`:
+        - Legacy way of allowing network traffic into a cluster
+        - Allows traffic into 1 specific set of pods only, so we would need as many as the number of deployments we need to expose  
+
+    - `Ingress`:
+        - A special kind of `Service`, which allows external traffic into a set of deployments and other Kubernetes objects
+        - There are multiple implementations of an `Ingress`, we will use the `ingress-nginx` that is a project developed officially by Kubernetes (this is from `github.com/kubernetes/ingress-nginx`)
+            - as opposed to `kubernetes-ingress`, which is a project developed by `nginx` (`github.com/nginxinc/kubernetes-ingress`)
+        - implementing `ingress-nginx` will create an ingress locally, but when deploying it to a cloud environment, it will create a second ingress based on the cloud provider, and the setup will be different for each one of them!
+        - `Controller`:
+            - Previously we created a `config` file that was fed into `kubectl`, so that the running `deployment` could look at it and check the *current state* vs. the *desired state*, and do as it was supposed to. The `deployment` in this case is considered a `controller`
+            - In the world of ingresses it works the same way, but the object we create with the `config` file is called an `Ingress controller`, which makes sure the *current state* is always up-to-date with the *desired state*
+
+        - **Summary:**
+            - We have an `ingress config file`, that creates an `ingress controller`, that is then creating a `traffic-forwarding element` in our infrastructure
+            - In our case with the `ingress-nginx` setup this `traffic forwarding element` will be the same as the controller, so no separated thing is created!
+            - When we set this up on a Cloud Provider, a 2nd ingress service is created by the provider, which is specific to that provider:
+                - With `Google Cloud` specifically:
+                    - Traffic comes into the `GC Load Balancer` (still in the cloud!)
+                    - Traffic is forwarded to the `Load Balancer Service` (this is inside our cluster)
+                    - The `Load Balancer Service` is connected to a `deployment`, that has a container running with the combined `nginx controller/nginx pod`
+                    - The `Load Balancer Service` and the `deployment` inside are created using an `ingress config file`, which includes a set of routing rules
+                    - The `ingress-nginx` project we are using also creates a `default backend`, which is another `deployment`-`cluster-ip-service` setup on the same level as our `client` and `server` deployments (this is ideally replaced by your app's backend, eg express server)
+        
