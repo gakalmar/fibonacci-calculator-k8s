@@ -1,0 +1,26 @@
+sudo: required
+services:
+  - docker
+env:
+  global:
+    - SHA=$(git rev-parse HEAD)
+    - CLOUDSKD_CORE_DISABLE_PROMPTS=1
+before_install:
+  # - add openssl encryption line
+  - curl https://sdk.cloud.google.com | bash > /dev/null;
+  - source $HOME/google-cloud-sdk/path.bash.inc
+  - gcloud components update kubectl
+  - gcloud auth activate-service-account --key-file service-account.json
+  - gcloud config set project # add <Google Project ID> & <Location code>
+  - gcloud containers clusters get-credentials fibonacci-calculator-cluster
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_PASSWORD" --password-stdin
+  - docker build -t gakalmar/fibonacci-calculator-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true gakalmar/fibonacci-calculator-test npm run test
+
+deploy:
+  provider: script
+  script: bash ./deploy.sh
+  on:
+    branch: main
